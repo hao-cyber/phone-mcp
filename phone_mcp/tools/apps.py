@@ -3,6 +3,7 @@
 import json
 import re
 import logging
+import shlex
 from ..core import run_command, check_device_connection
 from typing import Optional, Dict
 
@@ -108,7 +109,7 @@ async def list_installed_apps(
         app_info = {"package_name": package_name}
         
         # Get app label (name)
-        cmd = f'adb shell cmd package get-app-label {package_name}'
+        cmd = f'adb shell cmd package get-app-label {shlex.quote(package_name)}'
         success, label_output = await run_command(cmd)
         if success and label_output:
             app_info["app_name"] = label_output.strip()
@@ -116,13 +117,13 @@ async def list_installed_apps(
             app_info["app_name"] = package_name
             
         # Check if system app
-        cmd = f'adb shell pm path {package_name}'
+        cmd = f'adb shell pm path {shlex.quote(package_name)}'
         success, path_output = await run_command(cmd)
         app_info["system_app"] = success and "system" in path_output.lower()
         
         if not basic:
             # Get detailed info
-            cmd = f'adb shell dumpsys package {package_name}'
+            cmd = f'adb shell dumpsys package {shlex.quote(package_name)}'
             success, info_output = await run_command(cmd)
             if success:
                 # Parse version info
@@ -174,7 +175,7 @@ async def list_app_activities(package_name: str):
         return connection_status
 
     # Build the command to query activities
-    cmd = f"adb shell cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER --components {package_name}"
+    cmd = f"adb shell cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER --components {shlex.quote(package_name)}"
     success, output = await run_command(cmd)
 
     if not success:
@@ -224,7 +225,7 @@ async def terminate_app(package_name: str):
         return connection_status
 
     # Verify the package exists
-    cmd = f"adb shell pm list packages | grep {package_name}"
+    cmd = f"adb shell pm list packages | grep {shlex.quote(package_name)}"
     success, output = await run_command(cmd)
 
     if not success or package_name not in output:
@@ -243,7 +244,7 @@ async def terminate_app(package_name: str):
             return f"Package {package_name} not found on device"
 
     # Force stop the application
-    cmd = f"adb shell am force-stop {package_name}"
+    cmd = f"adb shell am force-stop {shlex.quote(package_name)}"
     success, output = await run_command(cmd)
 
     if success:
@@ -278,14 +279,12 @@ async def set_alarm(hour: int, minute: int, label: str = "Alarm") -> str:
 
     # Format time for display
     time_str = f"{hour:02d}:{minute:02d}"
-    escaped_label = label.replace("'", "\\'")
-
     # Create the alarm using the alarm clock intent
     cmd = (
         f"adb shell am start -a android.intent.action.SET_ALARM "
         f"-e android.intent.extra.alarm.HOUR {hour} "
         f"-e android.intent.extra.alarm.MINUTES {minute} "
-        f"-e android.intent.extra.alarm.MESSAGE '{escaped_label}' "
+        f"-e android.intent.extra.alarm.MESSAGE {shlex.quote(label)} "
         f"-e android.intent.extra.alarm.SKIP_UI true"
     )
 
@@ -336,10 +335,10 @@ async def launch_app_activity(package_name: str, activity_name: str = None) -> s
     try:
         if activity_name:
             # Launch specific activity
-            cmd = f"adb shell am start -n {package_name}/{activity_name}"
+            cmd = f"adb shell am start -n {shlex.quote(package_name + '/' + activity_name)}"
         else:
             # Launch app's main activity
-            cmd = f"adb shell monkey -p {package_name} -c android.intent.category.LAUNCHER 1"
+            cmd = f"adb shell monkey -p {shlex.quote(package_name)} -c android.intent.category.LAUNCHER 1"
         
         success, output = await run_command(cmd)
         
@@ -415,18 +414,16 @@ async def launch_intent(intent_action: str, intent_type: Optional[str] = None, e
     """
     try:
         # Construct base command
-        cmd = f"adb shell am start -a {intent_action}"
-        
+        cmd = f"adb shell am start -a {shlex.quote(intent_action)}"
+
         # Add type if provided
         if intent_type:
-            cmd += f" -t {intent_type}"
-        
+            cmd += f" -t {shlex.quote(intent_type)}"
+
         # Add extras if provided
         if extras:
             for key, value in extras.items():
-                # Escape quotes in value
-                value = value.replace('"', '\\"')
-                cmd += f' --es {key} "{value}"'
+                cmd += f' --es {shlex.quote(key)} {shlex.quote(value)}'
         
         success, output = await run_command(cmd)
         

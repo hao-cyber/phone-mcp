@@ -5,6 +5,7 @@ This module provides functions to interact with the device screen and input.
 import asyncio
 import json
 import re
+import shlex
 from ..core import run_command, check_device_connection
 import logging
 import urllib.parse
@@ -175,7 +176,7 @@ async def press_key(keycode: str):
     # Check if the keycode is in our common keycodes
     actual_keycode = common_keycodes.get(keycode.lower(), keycode)
 
-    cmd = f"adb shell input keyevent {actual_keycode}"
+    cmd = f"adb shell input keyevent {shlex.quote(actual_keycode)}"
     success, output = await run_command(cmd)
 
     if success:
@@ -234,9 +235,7 @@ async def input_text(text: str):
             }, ensure_ascii=False)
 
     # Method 1: Try with the standard input text command first
-    # Need to properly escape special characters for the shell
-    escaped_text = text.replace('"', '\\"')
-    cmd = f'adb shell input text "{escaped_text}"'
+    cmd = f'adb shell input text {shlex.quote(text)}'
     success, output = await run_command(cmd)
 
     # If successful, return success
@@ -253,7 +252,7 @@ async def input_text(text: str):
     try:
         # URL encode the text to handle special characters properly
         encoded_text = urllib.parse.quote(text)
-        uri_cmd = f'adb shell am broadcast -a ADB_INPUT_TEXT --es msg "{encoded_text}"'
+        uri_cmd = f'adb shell am broadcast -a ADB_INPUT_TEXT --es msg {shlex.quote(encoded_text)}'
         uri_success, uri_output = await run_command(uri_cmd)
         
         if uri_success:
@@ -272,9 +271,7 @@ async def input_text(text: str):
             if char == ' ':
                 char_cmd = "adb shell input keyevent 62"  # Space keycode
             else:
-                # Escape any quotes in the character
-                escaped_char = char.replace('"', '\\"')
-                char_cmd = f'adb shell input text "{escaped_char}"'
+                char_cmd = f'adb shell input text {shlex.quote(char)}'
             
             char_success, char_output = await run_command(char_cmd)
             if not char_success:
@@ -337,7 +334,7 @@ async def open_url(url: str):
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
 
-    cmd = f'adb shell am start -a android.intent.action.VIEW -d "{url}"'
+    cmd = f'adb shell am start -a android.intent.action.VIEW -d {shlex.quote(url)}'
     success, output = await run_command(cmd)
 
     if success:

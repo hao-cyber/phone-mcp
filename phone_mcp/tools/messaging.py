@@ -3,6 +3,7 @@
 import asyncio
 import subprocess
 import json
+import shlex
 from ..core import run_command
 from ..config import DEFAULT_COUNTRY_CODE
 
@@ -33,11 +34,8 @@ async def send_text_message(phone_number: str, message: str) -> str:
     if not phone_number[1:].isdigit():
         return "Invalid phone number format. Please use numeric digits only."
 
-    # Escape single quotes in the message
-    escaped_message = message.replace("'", "\\'")
-
     # Open messaging app with the number and message
-    cmd = f"adb shell am start -a android.intent.action.SENDTO -d sms:{phone_number} --es sms_body '{escaped_message}' --ez exit_on_sent true"
+    cmd = f"adb shell am start -a android.intent.action.SENDTO -d sms:{shlex.quote(phone_number)} --es sms_body {shlex.quote(message)} --ez exit_on_sent true"
     success, output = await run_command(cmd)
     # Open messaging app with the number and message, and auto-exit after sending
 

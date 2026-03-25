@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import click
+import shlex
 import subprocess
 import json
 
@@ -61,8 +62,8 @@ def create_contact(account_name, account_type):
     """Create a new raw contact with specified account details"""
     command = (
         f'adb shell content insert --uri content://com.android.contacts/raw_contacts '
-        f'--bind account_type:s:{account_type} '
-        f'--bind account_name:s:{account_name}'
+        f'--bind account_type:s:{shlex.quote(account_type)} '
+        f'--bind account_name:s:{shlex.quote(account_name)}'
     )
     
     success, output = run_adb_command(command)
@@ -247,7 +248,7 @@ def get_app_shortcuts(page, page_size, package_name):
     - shortcuts: List of shortcuts in current page
     """
     # Get total count with package filter
-    where = f"package='{package_name}'"
+    where = f"package={shlex.quote(package_name)}"
     total_count = get_total_count('content://com.android.launcher3.settings/favorites', where)
     total_pages = (total_count + page_size - 1) // page_size
     

@@ -5,6 +5,7 @@ import subprocess
 import os.path
 import time
 import threading
+import shlex
 from ..core import run_command
 from ..config import SCREENSHOT_PATH, RECORDING_PATH, COMMAND_TIMEOUT
 
@@ -142,7 +143,7 @@ def _download_recording_background(storage_path: str, duration_seconds: int):
     
     # Attempt to download the file
     try:
-        pull_cmd = f"adb pull {storage_path} ./{local_filename}"
+        pull_cmd = f"adb pull {shlex.quote(storage_path)} {shlex.quote(local_filename)}"
         result = subprocess.run(pull_cmd, shell=True, capture_output=True, text=True)
         
         if result.returncode == 0:
@@ -213,7 +214,7 @@ async def start_screen_recording(duration_seconds: int = 30) -> str:
     # Start screen recording with the specified duration
     try:
         # Use synchronous method to start screen recording, avoiding asyncio issues
-        cmd = f"adb shell screenrecord --time-limit {duration_seconds} {storage_path}"
+        cmd = f"adb shell screenrecord --time-limit {int(duration_seconds)} {shlex.quote(storage_path)}"
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # Start background thread to wait for recording completion and download the file

@@ -1,6 +1,7 @@
 """Call-related phone control functions."""
 
 import re
+import shlex
 from ..core import run_command, check_device_connection
 from ..config import DEFAULT_COUNTRY_CODE
 
@@ -27,7 +28,7 @@ async def call_number(phone_number: str) -> str:
     if not phone_number[1:].isdigit():
         return "Invalid phone number format. Please use numeric digits only."
 
-    cmd = f"adb shell am start -a android.intent.action.CALL -d tel:{phone_number}"
+    cmd = f"adb shell am start -a android.intent.action.CALL -d tel:{shlex.quote(phone_number)}"
     success, output = await run_command(cmd)
 
     if success:

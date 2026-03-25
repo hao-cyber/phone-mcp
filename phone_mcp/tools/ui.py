@@ -9,6 +9,7 @@ import os
 import tempfile
 import xml.etree.ElementTree as ET
 import logging
+import shlex
 from ..core import run_command, check_device_connection
 
 logger = logging.getLogger("phone_mcp")
@@ -101,7 +102,7 @@ async def dump_ui():
     logger.debug(f"Device dump file path: {device_file_path}")
 
     # Pull file from device
-    cmd = f"adb pull {device_file_path} {temp_file}"
+    cmd = f"adb pull {shlex.quote(device_file_path)} {shlex.quote(temp_file)}"
     success, output = await run_command(cmd)
     
     if not success:

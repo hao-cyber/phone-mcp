@@ -6,6 +6,7 @@ This module provides functions to access and manage contacts on the phone.
 import asyncio
 import json
 import re
+import shlex
 from ..core import run_command
 
 
@@ -116,19 +117,19 @@ async def get_contacts(limit=20):
         # These are kept for device compatibility but rarely needed now
 
         # If prior methods didn't work, try the different content URIs
-        cmd = f"adb shell content query --uri content://com.android.contacts/data --projection display_name:data1:mimetype --limit {limit}"
+        cmd = f"adb shell content query --uri content://com.android.contacts/data --projection display_name:data1:mimetype --limit {int(limit)}"
         success, output = await run_command(cmd)
 
         if not success or "usage:" in output:
-            cmd = f"adb shell content query --uri content://contacts/data --projection display_name:data1:mimetype --limit {limit}"
+            cmd = f"adb shell content query --uri content://contacts/data --projection display_name:data1:mimetype --limit {int(limit)}"
             success, output = await run_command(cmd)
 
         if not success or "usage:" in output:
-            cmd = f"adb shell content query --uri content://contacts/phones --limit {limit}"
+            cmd = f"adb shell content query --uri content://contacts/phones --limit {int(limit)}"
             success, output = await run_command(cmd)
 
         if not success or "usage:" in output:
-            cmd = f"adb shell content query --uri content://com.android.contacts/data/phones --limit {limit}"
+            cmd = f"adb shell content query --uri content://com.android.contacts/data/phones --limit {int(limit)}"
             success, output = await run_command(cmd)
 
         if not success or "usage:" in output:
@@ -240,31 +241,30 @@ async def create_contact(name: str, phone_number: str, email: str = None) -> str
         return "Cannot create contact. Permission may be denied. Please check your device settings."
 
     try:
-        # Clean inputs to prevent command injection
-        name = name.replace("'", "").replace('"', "").strip()
-        phone_number = phone_number.replace("'", "").replace('"', "").replace(" ", "").strip()
-        
-        if email:
-            email = email.replace("'", "").replace('"', "").strip()
-
         # Validate inputs
+        name = name.strip()
+        phone_number = phone_number.replace(" ", "").strip()
+
         if not name:
             return "Contact name cannot be empty"
-        
+
         if not phone_number:
             return "Phone number cannot be empty"
-        
+
+        if email:
+            email = email.strip()
+
         # Build the intent command
         intent_cmd = (
             'adb shell am start -a android.intent.action.INSERT '
             '-t vnd.android.cursor.dir/contact '
-            f'--es name "{name}" '
-            f'--es phone "{phone_number}" '
+            f'--es name {shlex.quote(name)} '
+            f'--es phone {shlex.quote(phone_number)} '
         )
-        
+
         # Add email if provided
         if email:
-            intent_cmd += f'--es email "{email}" '
+            intent_cmd += f'--es email {shlex.quote(email)} '
         
         # Execute the command
         success, output = await run_command(intent_cmd)

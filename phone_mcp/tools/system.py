@@ -6,6 +6,7 @@ This module provides functions to access system-level information on the phone.
 import asyncio
 import json
 import re
+import shlex
 from ..core import run_command
 
 
@@ -194,11 +195,11 @@ async def launch_app_activity(package_component=None, action=None, extra_args=No
 
         # Add action if provided
         if action:
-            cmd_parts.append(f'-a "{action}"')
+            cmd_parts.append(f'-a {shlex.quote(action)}')
 
         # Add component if provided
         if package_component:
-            cmd_parts.append(f'-n "{package_component}"')
+            cmd_parts.append(f'-n {shlex.quote(package_component)}')
 
         # Add any extra arguments
         if extra_args:
