@@ -8,16 +8,33 @@
 ## ⚡ 快速开始
 
 ### 📥 安装
+使用 Python 3.10+ 和 [uv](https://docs.astral.sh/uv/getting-started/installation/)，在隔离环境中运行：
+
 ```bash
-# 直接使用 uvx 运行（推荐，uvx 是 uv 的一部分，无需单独安装）
-uvx phone-mcp
-
-# 或使用 uv 安装
-uv pip install phone-mcp
-
-# 或使用 pip 安装
-pip install phone-mcp
+uvx --with "mcp<2" --with requests phone-mcp
 ```
+
+额外依赖用于让现有 PyPI 版本继续使用 MCP v1 API，并提供地图模块导入的 `requests`。更新后的源码包已声明这些依赖，但旧发布版本仍需显式指定。
+
+使用 uv 创建持久安装环境：
+
+```bash
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python phone-mcp "mcp<2" requests
+.venv/bin/phone-cli --help
+```
+
+也可以在 Linux/macOS 上使用 Python 自带的虚拟环境和 pip：
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install phone-mcp "mcp<2" requests
+.venv/bin/phone-cli --help
+```
+
+Windows 上先运行 `py -3 -m venv .venv`，再使用 `.venv\Scripts\python.exe` 和 `.venv\Scripts\phone-cli.exe` 替代上述 `.venv/bin/` 路径。
+
+Debian/Ubuntu 上的 `externally-managed-environment` 错误表示系统 Python 由操作系统管理。请使用 `uvx` 或虚拟环境，不要使用 `sudo pip` 或 `--break-system-packages` 绕过限制。如果缺少 `venv`，请先通过系统包管理器安装 `python3-venv`。
 
 ### 🔧 配置说明
 #### AI 助手配置
@@ -29,6 +46,8 @@ pip install phone-mcp
         "phone-mcp": {
             "command": "uvx",
             "args": [
+                "--with", "mcp<2",
+                "--with", "requests",
                 "phone-mcp"
             ]
         }
@@ -41,7 +60,7 @@ pip install phone-mcp
 {
     "mcpServers": {
         "phone-mcp": {
-            "command": "/usr/local/bin/python",
+            "command": "/absolute/path/to/.venv/bin/python",
             "args": [
                 "-m",
                 "phone_mcp"
@@ -51,29 +70,7 @@ pip install phone-mcp
 }
 ```
 
-> **重要提示**：上述配置中的 `/usr/local/bin/python` 是 Python 解释器的路径，您需要根据自己系统中 Python 的实际安装位置进行修改。以下是在不同操作系统中查找 Python 路径的方法：
->
-> **Linux/macOS**：
-> 在终端中运行以下命令：
-> ```bash
-> which python3
-> ```
-> 或
-> ```bash
-> which python
-> ```
->
-> **Windows**：
-> 在命令提示符(CMD)中运行：
-> ```cmd
-> where python
-> ```
-> 或在 PowerShell 中运行：
-> ```powershell
-> (Get-Command python).Path
-> ```
->
-> 确保使用完整的路径替换配置中的 `/usr/local/bin/python`，例如 Windows 上可能是 `C:\Python39\python.exe`
+> **重要提示**：请填写安装了 phone-mcp 的虚拟环境中 Python 的绝对路径，而不是系统 Python。Linux/macOS 通常为 `/absolute/path/to/.venv/bin/python`；Windows 为 `C:\path\to\.venv\Scripts\python.exe`（JSON 中反斜杠需写成 `\\`）。无需在 AI 助手启动前激活虚拟环境。
 
 > **注意**：对于 Cursor，请将此配置放在 `~/.cursor/mcp.json` 文件中
 
@@ -106,7 +103,7 @@ pip install phone-mcp
 
 ## 🛠️ 系统要求
 
-- Python 3.7+
+- Python 3.10+
 - 启用 USB 调试的 Android 设备
 - ADB 工具
 

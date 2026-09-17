@@ -7,10 +7,11 @@ setup(
     setup_requires=["setuptools-scm"],
     packages=find_packages(),
     install_requires=[
-        "mcp>=1.6.0",
+        "mcp>=1.6.0,<2",
         "aiohttp>=3.8.0",
         "asyncio>=3.4.3",
         "pypinyin>=0.54.0",
+        "requests>=2.31.0",
     ],
     author="hao",
     author_email="hao@hao.com",
@@ -23,7 +24,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     entry_points={
         "mcp.plugins": ["phone=phone_mcp:mcp"],
         "console_scripts": [

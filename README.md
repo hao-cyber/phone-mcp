@@ -17,17 +17,33 @@
 ## ⚡ Quick Start
 
 ### 📥 Installation
+Use Python 3.10+ and [uv](https://docs.astral.sh/uv/getting-started/installation/) to run in an isolated environment:
+
 ```bash
-# Run directly with uvx (recommended, part of uv, no separate installation needed)
-uvx phone-mcp
-
-# Or install with uv
-uv pip install phone-mcp
-
-# Or install with pip
-pip install phone-mcp
+uvx --with "mcp<2" --with requests phone-mcp
 ```
 
+The extra dependencies keep existing PyPI releases compatible with the MCP v1 API and provide `requests`, which the maps module imports. They are declared in the updated source package but are needed for older releases.
+
+For a persistent installation with uv:
+
+```bash
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python phone-mcp "mcp<2" requests
+.venv/bin/phone-cli --help
+```
+
+Or use Python's built-in virtual environment and pip on Linux/macOS:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install phone-mcp "mcp<2" requests
+.venv/bin/phone-cli --help
+```
+
+On Windows, create the environment with `py -3 -m venv .venv`, then use `.venv\Scripts\python.exe` and `.venv\Scripts\phone-cli.exe` instead of the `.venv/bin/` paths above.
+
+On Debian/Ubuntu, an `externally-managed-environment` error means the system Python is managed by the OS. Use `uvx` or a virtual environment; do not bypass it with `sudo pip` or `--break-system-packages`. If `venv` is unavailable, install `python3-venv` with your system package manager first.
 
 ### 🔧 Configuration
 
@@ -40,6 +56,8 @@ Configure in your AI assistant configuration (Cursor, Trae, Claude, etc.):
         "phone-mcp": {
             "command": "uvx",
             "args": [
+                "--with", "mcp<2",
+                "--with", "requests",
                 "phone-mcp"
             ]
         }
@@ -52,7 +70,7 @@ Alternatively, if you installed with pip:
 {
     "mcpServers": {
         "phone-mcp": {
-            "command": "/usr/local/bin/python",
+            "command": "/absolute/path/to/.venv/bin/python",
             "args": [
                 "-m",
                 "phone_mcp"
@@ -62,29 +80,7 @@ Alternatively, if you installed with pip:
 }
 ```
 
-> **Important**: The path `/usr/local/bin/python` in the configuration above is the path to the Python interpreter. You need to modify it according to the actual Python installation location on your system. Here's how to find the Python path on different operating systems:
->
-> **Linux/macOS**:
-> Run the following command in terminal:
-> ```bash
-> which python3
-> ```
-> or
-> ```bash
-> which python
-> ```
->
-> **Windows**:
-> Run in Command Prompt (CMD):
-> ```cmd
-> where python
-> ```
-> Or in PowerShell:
-> ```powershell
-> (Get-Command python).Path
-> ```
->
-> Make sure to replace `/usr/local/bin/python` in the configuration with the full path, for example on Windows it might be `C:\Python39\python.exe`
+> **Important**: Use the absolute path to Python inside the virtual environment where you installed phone-mcp, not the system Python. On Linux/macOS this is `/absolute/path/to/.venv/bin/python`; on Windows use `C:\path\to\.venv\Scripts\python.exe` (escape backslashes as `\\` in JSON). You do not need to activate the environment before launching your AI assistant.
 
 > **Note**: For Cursor, place this configuration in `~/.cursor/mcp.json`
 
@@ -117,7 +113,7 @@ Usage:
 
 ## 🛠️ Requirements
 
-- Python 3.7+
+- Python 3.10+
 - Android device with USB debugging enabled
 - ADB tools
 
