@@ -16,8 +16,8 @@ from .ui_enhanced import (
     find_clickable_elements, wait_for_element, scroll_to_element
 )
 from .interactions import tap_screen, swipe_screen, press_key, input_text, get_screen_size
-from .media import take_screenshot
 from ..core import run_command
+from .media import capture_screenshot_base64
 
 logger = logging.getLogger("phone_mcp")
 
@@ -127,6 +127,9 @@ async def get_screen_info(include_screenshot: bool = True, max_elements: int = 1
     
     This function obtains comprehensive screen information by retrieving the UI hierarchy,
     taking a screenshot, and parsing all visible elements.
+
+    If screenshot capture fails, UI information is still returned with an empty
+    screenshot and a screenshot_error explaining the capture failure.
     
     Args:
         include_screenshot (bool, optional): Whether to include a base64-encoded screenshot. Defaults to True.
@@ -193,10 +196,13 @@ async def get_screen_info(include_screenshot: bool = True, max_elements: int = 1
         
         # Take a screenshot for reference if needed
         screenshot_base64 = ""
+        screenshot_error = ""
         if include_screenshot:
-            screenshot_result = await take_screenshot()
-            screenshot_data = json.loads(screenshot_result)
-            screenshot_base64 = screenshot_data.get("data", "") if screenshot_data.get("status") == "success" else ""
+            captured, output = await capture_screenshot_base64()
+            if captured:
+                screenshot_base64 = output
+            else:
+                screenshot_error = output
         
         # Build result
         result = {
@@ -217,6 +223,8 @@ async def get_screen_info(include_screenshot: bool = True, max_elements: int = 1
         # Add screenshot only if included
         if include_screenshot:
             result["screenshot"] = screenshot_base64
+            if screenshot_error:
+                result["screenshot_error"] = screenshot_error
         
         return json.dumps(result, ensure_ascii=False)
     except Exception as e:
@@ -280,6 +288,9 @@ async def analyze_screen(include_screenshot: bool = False, max_elements: int = 5
         {
             "screenshot": base64-encoded PNG image of the screen
         }
+
+        Capture failures retain the UI analysis and return an empty screenshot
+        plus screenshot_error. Disabling screenshots omits both fields.
         
     Examples:
         # Basic screen analysis
@@ -455,7 +466,12 @@ async def analyze_screen(include_screenshot: bool = False, max_elements: int = 5
             },
             "suggested_actions": suggested_actions,
         }
-        
+
+        if include_screenshot:
+            screen_analysis["screenshot"] = screen_info.get("screenshot", "")
+            if "screenshot_error" in screen_info:
+                screen_analysis["screenshot_error"] = screen_info["screenshot_error"]
+
         return json.dumps(screen_analysis, ensure_ascii=False)
         
     except Exception as e:
@@ -682,4 +698,4 @@ async def interact_with_screen(action: str, params: Dict[str, Any]) -> str:
         return json.dumps({
             "status": "error",
             "message": f"Interaction operation failed: {str(e)}"
-        }) 
+        })

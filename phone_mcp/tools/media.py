@@ -1,12 +1,46 @@
 """Media-related phone control functions."""
 
 import asyncio
+import base64
 import subprocess
 import os.path
 import time
 import threading
 from ..core import run_command
 from ..config import SCREENSHOT_PATH, RECORDING_PATH, COMMAND_TIMEOUT
+
+
+async def capture_screenshot_base64() -> tuple[bool, str]:
+    """Capture PNG bytes without files or a host shell/base64 executable."""
+    try:
+        process = await asyncio.create_subprocess_exec(
+            "adb", "exec-out", "screencap", "-p",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+    except OSError as exc:
+        return False, str(exc)
+
+    try:
+        stdout, stderr = await asyncio.wait_for(
+            process.communicate(), timeout=COMMAND_TIMEOUT
+        )
+    except (asyncio.TimeoutError, asyncio.CancelledError) as exc:
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+        await process.communicate()
+        if isinstance(exc, asyncio.CancelledError):
+            raise
+        return False, f"Screenshot capture timed out after {COMMAND_TIMEOUT} seconds"
+
+    if process.returncode != 0:
+        return False, stderr.decode("utf-8", errors="replace").strip() or (
+            f"ADB screenshot capture failed with exit code {process.returncode}"
+        )
+    if not stdout.startswith(b"\x89PNG\r\n\x1a\n"):
+        return False, "ADB screenshot capture did not return PNG data"
+    return True, base64.b64encode(stdout).decode("ascii")
 
 
 async def take_screenshot() -> str:
