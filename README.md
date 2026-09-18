@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/hao-cyber-phone-mcp-badge.png)](https://mseep.ai/app/hao-cyber-phone-mcp)
+
 # 📱 Phone MCP Plugin
 ![Downloads](https://pepy.tech/badge/phone-mcp)
 
