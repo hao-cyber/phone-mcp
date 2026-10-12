@@ -297,7 +297,7 @@ async def set_alarm(hour: int, minute: int, label: str = "Alarm") -> str:
         return f"Failed to set alarm: {output}"
 
 
-async def launch_app_activity(package_name: str, activity_name: str = None) -> str:
+async def launch_app_activity(package_name: str, activity_name: Optional[str] = None) -> str:
     """Launch an app using package name and optionally an activity name
     
     This function uses adb to start an application on the device either by package name
