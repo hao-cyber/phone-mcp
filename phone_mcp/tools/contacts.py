@@ -6,6 +6,7 @@ This module provides functions to access and manage contacts on the phone.
 import asyncio
 import json
 import re
+from typing import Optional
 from ..core import run_command
 
 
@@ -207,7 +208,7 @@ async def get_contacts(limit=20):
         return f"Error retrieving contacts: {str(e)}"
 
 
-async def create_contact(name: str, phone_number: str, email: str = None) -> str:
+async def create_contact(name: str, phone_number: str, email: Optional[str] = None) -> str:
     """Create a new contact on the phone.
 
     Opens the contact creation UI with pre-filled name and phone number,

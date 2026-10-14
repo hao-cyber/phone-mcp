@@ -32,3 +32,26 @@ async def test_installed_mcp_server_initializes_and_lists_tools(tmp_path):
                 assert "analyze_screen" in tools
                 assert "include_screenshot" in tools["analyze_screen"].inputSchema["properties"]
     await asyncio.wait_for(connect(), timeout=30)
+
+
+@pytest.mark.asyncio
+async def test_optional_tool_arguments_accept_explicit_null(tmp_path):
+    """Optional arguments advertise ``"default": null``, so null must validate."""
+    async def connect():
+        params = StdioServerParameters(
+            command=sys.executable, args=["-m", "phone_mcp"], cwd=str(tmp_path),
+        )
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write, read_timeout_seconds=timedelta(seconds=15)) as session:
+                await session.initialize()
+                response = await session.list_tools()
+                tools = {tool.name: tool for tool in response.tools}
+                for tool_name, argument in [
+                    ("create_contact", "email"),
+                    ("launch_app_activity", "activity_name"),
+                ]:
+                    schema = tools[tool_name].inputSchema["properties"][argument]
+                    assert schema.get("default") is None
+                    allowed = [option.get("type") for option in schema.get("anyOf", [schema])]
+                    assert "null" in allowed, (tool_name, argument, schema)
+    await asyncio.wait_for(connect(), timeout=30)
